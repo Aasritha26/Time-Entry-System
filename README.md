@@ -1,6 +1,6 @@
 # Employee Time Entry System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) version 18.2.0
 
 ## Available Scripts
 
