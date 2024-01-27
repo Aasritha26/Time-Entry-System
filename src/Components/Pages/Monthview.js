@@ -4,6 +4,7 @@ import './Monthview.css';
 const Monthview = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [inputValues, setInputValues] = useState(Array(31).fill(''));
+  const [inputErrors, setInputErrors] = useState(Array(31).fill(''));
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
@@ -13,6 +14,17 @@ const Monthview = () => {
     const newInputValues = [...inputValues];
     newInputValues[index] = event.target.value;
     setInputValues(newInputValues);
+    validateInput(index, event.target.value);
+  };
+
+  const validateInput = (index, value) => {
+    const newInputErrors = [...inputErrors];
+    if (!value.trim()) {
+      newInputErrors[index] = 'Field is required';
+    } else {
+      newInputErrors[index] = '';
+    }
+    setInputErrors(newInputErrors);
   };
 
   const calculateRowTotal = (rowValues) => {
@@ -44,7 +56,7 @@ const Monthview = () => {
   const renderDates = () => {
     const daysInMonth = selectedMonth === 'January' ? 31 : 29;
     const dates = [];
-    
+
     const totalRowValues = inputValues.map((value, index) => {
       return {
         index,
@@ -90,6 +102,11 @@ const Monthview = () => {
               value={inputValues[i - 1] || ''}
               onChange={(event) => handleInputChange(i - 1, event)}
             />
+            {inputErrors[i - 1] && (
+            <div className="error-message" style={{ color: 'red' }}>
+              {inputErrors[i - 1]}
+            </div>
+          )}
           </div>
         );
       }
@@ -110,10 +127,9 @@ const Monthview = () => {
         );
       }
     }
-  
-    
+
     const totalRow = calculateRowTotal(totalRowValues.map((item) => item.value));
-      
+
     const weeks = [];
     for (let i = 0; i < dates.length; i += 7) {
       const weekRowValues = totalRowValues.slice(i, i + 7);
@@ -122,9 +138,7 @@ const Monthview = () => {
       weeks.push(
         <div key={i} className="week-container">
           {dates.slice(i, i + 7)}
-          <div className="total-container">
-           
-          </div>
+          <div className="total-container"></div>
         </div>
       );
     }
@@ -141,19 +155,24 @@ const Monthview = () => {
     );
   };
 
-
   const handleSubmit = async () => {
     try {
+      if (!selectedMonth || inputValues.some((value) => !value.trim())) {
+        const newInputErrors = inputValues.map((value) => (!value.trim() ? 'Field is required' : ''));
+        setInputErrors(newInputErrors);
+        return;
+      }
+
       console.log(`Submit button clicked for ${selectedMonth}`);
       console.log('Input values:', inputValues);
-  
+
       const formData = new FormData();
       formData.append('selectedMonth', selectedMonth);
-  
+
       inputValues.forEach((value, index) => {
         formData.append(`Week-${Math.ceil((index + 1) / 7)}`, value);
       });
-  
+
       const response = await fetch('http://localhost:3001/api/monthview', {
         method: 'POST',
         body: formData,
@@ -162,29 +181,31 @@ const Monthview = () => {
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
       }
-  
+
       const data = await response.json();
       console.log('Server response:', data);
-
     } catch (error) {
       console.error('Error sending data to the server:', error);
-    
     }
   };
-  
+
   return (
     <div className="container">
       <div className="center">
         <label>
           Select Month:
-          <select className={`dropdown ${selectedMonth && 'selected'}`} value={selectedMonth} onChange={handleMonthChange}>
+          <select
+            className={`dropdown ${selectedMonth && 'selected'}`}
+            value={selectedMonth}
+            onChange={handleMonthChange}
+          >
             <option value="">Select</option>
             <option value="January">January 2024</option>
             <option value="February">February 2024</option>
           </select>
         </label>
         {selectedMonth && renderDates()}
-        {selectedMonth && <button onClick={handleSubmit}>Submit</button>}
+        <button onClick={handleSubmit}>Submit</button>
       </div>
     </div>
   );
